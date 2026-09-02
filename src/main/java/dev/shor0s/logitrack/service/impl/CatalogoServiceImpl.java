@@ -3,7 +3,6 @@ package dev.shor0s.logitrack.service.impl;
 import dev.shor0s.logitrack.dto.request.CatalogoRequestDTO;
 import dev.shor0s.logitrack.dto.response.CatalogoResponseDTO;
 import dev.shor0s.logitrack.dto.response.CategoriaResponseDTO;
-import dev.shor0s.logitrack.exceptions.ResourceNotFoundException;
 import dev.shor0s.logitrack.mapper.CatalogoMapper;
 import dev.shor0s.logitrack.mapper.CategoriaMapper;
 import dev.shor0s.logitrack.model.Catalogo;
@@ -11,7 +10,9 @@ import dev.shor0s.logitrack.model.Categoria;
 import dev.shor0s.logitrack.repository.CatalogoRepository;
 import dev.shor0s.logitrack.repository.CategoriaRepository;
 import dev.shor0s.logitrack.service.CatalogoService;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -34,6 +35,7 @@ public class CatalogoServiceImpl implements CatalogoService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CatalogoResponseDTO> listarTodos() {
         return catalogoRepository.findAll().stream()
                 .map(this::convertirAResponseDTO)
@@ -41,6 +43,7 @@ public class CatalogoServiceImpl implements CatalogoService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CatalogoResponseDTO> listarActivos() {
         return catalogoRepository.findByActivoTrue().stream()
                 .map(this::convertirAResponseDTO)
@@ -48,6 +51,7 @@ public class CatalogoServiceImpl implements CatalogoService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CatalogoResponseDTO> buscarPorNombre(String nombre) {
         return catalogoRepository.findByNombreContainingIgnoreCase(nombre).stream()
                 .map(this::convertirAResponseDTO)
@@ -55,9 +59,10 @@ public class CatalogoServiceImpl implements CatalogoService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CatalogoResponseDTO> listarPorCategoria(Integer idCategoria) {
         if (!categoriaRepository.existsById(idCategoria)) {
-            throw new ResourceNotFoundException("La Categoría con ID " + idCategoria + " no existe.");
+            throw new EntityNotFoundException("La Categoría con ID " + idCategoria + " no existe.");
         }
         return catalogoRepository.findByCategoria_IdCategoria(idCategoria).stream()
                 .map(this::convertirAResponseDTO)
@@ -65,16 +70,18 @@ public class CatalogoServiceImpl implements CatalogoService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CatalogoResponseDTO buscarPorId(Integer id) {
         Catalogo catalogo = catalogoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Catálogo no encontrado con ID: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Catálogo no encontrado con ID: " + id));
         return convertirAResponseDTO(catalogo);
     }
 
     @Override
+    @Transactional
     public CatalogoResponseDTO crear(CatalogoRequestDTO dto) {
         Categoria categoria = categoriaRepository.findById(dto.idCategoria())
-                .orElseThrow(() -> new ResourceNotFoundException("No se puede crear el producto en catálogo. La Categoría con ID " + dto.idCategoria() + " no existe."));
+                .orElseThrow(() -> new EntityNotFoundException("No se puede crear el producto en catálogo. La Categoría con ID " + dto.idCategoria() + " no existe."));
 
         Catalogo catalogo = catalogoMapper.dtoToEntity(dto, categoria);
         catalogo.setActivo(true);
@@ -84,12 +91,13 @@ public class CatalogoServiceImpl implements CatalogoService {
     }
 
     @Override
+    @Transactional
     public CatalogoResponseDTO actualizar(Integer id, CatalogoRequestDTO dto) {
         Catalogo catalogo = catalogoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("No se puede actualizar. Catálogo no encontrado con ID: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("No se puede actualizar. Catálogo no encontrado con ID: " + id));
 
         Categoria categoria = categoriaRepository.findById(dto.idCategoria())
-                .orElseThrow(() -> new ResourceNotFoundException("No se puede actualizar el catálogo. La Categoría con ID " + dto.idCategoria() + " no existe."));
+                .orElseThrow(() -> new EntityNotFoundException("No se puede actualizar el catálogo. La Categoría con ID " + dto.idCategoria() + " no existe."));
 
         catalogoMapper.updateEntityFromDto(catalogo, dto, categoria);
 
@@ -98,9 +106,10 @@ public class CatalogoServiceImpl implements CatalogoService {
     }
 
     @Override
+    @Transactional
     public void desactivar(Integer id) {
         Catalogo catalogo = catalogoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Catálogo no encontrado con ID: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Catálogo no encontrado con ID: " + id));
         catalogo.setActivo(false);
         catalogoRepository.save(catalogo);
     }

@@ -4,7 +4,6 @@ import dev.shor0s.logitrack.dto.request.BodegaRequestDTO;
 import dev.shor0s.logitrack.dto.response.BodegaResponseDTO;
 import dev.shor0s.logitrack.dto.response.RolResponseDTO;
 import dev.shor0s.logitrack.dto.response.UsuarioResponseDTO;
-import dev.shor0s.logitrack.exceptions.ResourceNotFoundException;
 import dev.shor0s.logitrack.mapper.BodegaMapper;
 import dev.shor0s.logitrack.mapper.RolMapper;
 import dev.shor0s.logitrack.mapper.UsuarioMapper;
@@ -13,7 +12,9 @@ import dev.shor0s.logitrack.model.Usuario;
 import dev.shor0s.logitrack.repository.BodegaRepository;
 import dev.shor0s.logitrack.repository.UsuarioRepository;
 import dev.shor0s.logitrack.service.BodegaService;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -38,6 +39,7 @@ public BodegaServiceImpl(BodegaRepository bodegaRepository,
 }
 
 @Override
+@Transactional(readOnly = true)
 public List<BodegaResponseDTO> listarTodas() {
     return bodegaRepository.findAll().stream()
             .map(this::convertirAResponseDTO)
@@ -45,6 +47,7 @@ public List<BodegaResponseDTO> listarTodas() {
 }
 
 @Override
+@Transactional(readOnly = true)
 public List<BodegaResponseDTO> listarActivas() {
     return bodegaRepository.findByActivoTrue().stream()
             .map(this::convertirAResponseDTO)
@@ -52,6 +55,7 @@ public List<BodegaResponseDTO> listarActivas() {
 }
 
 @Override
+@Transactional(readOnly = true)
 public List<BodegaResponseDTO> buscarPorNombre(String nombre) {
     return bodegaRepository.findByNombreContainingIgnoreCase(nombre).stream()
             .map(this::convertirAResponseDTO)
@@ -59,9 +63,10 @@ public List<BodegaResponseDTO> buscarPorNombre(String nombre) {
 }
 
 @Override
+@Transactional(readOnly = true)
 public List<BodegaResponseDTO> buscarPorEncargado(Integer idEncargado) {
     if (!usuarioRepository.existsById(idEncargado)) {
-        throw new ResourceNotFoundException("El encargado con ID " + idEncargado + " no existe.");
+        throw new EntityNotFoundException("El encargado con ID " + idEncargado + " no existe.");
     }
     return bodegaRepository.findByEncargado_IdUsuario(idEncargado).stream()
             .map(this::convertirAResponseDTO)
@@ -69,16 +74,18 @@ public List<BodegaResponseDTO> buscarPorEncargado(Integer idEncargado) {
 }
 
 @Override
+@Transactional(readOnly = true)
 public BodegaResponseDTO buscarPorId(Integer id) {
     Bodega bodega = bodegaRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Bodega no encontrada con ID: " + id));
+            .orElseThrow(() -> new EntityNotFoundException("Bodega no encontrada con ID: " + id));
     return convertirAResponseDTO(bodega);
 }
 
 @Override
+@Transactional
 public BodegaResponseDTO crear(BodegaRequestDTO dto) {
     Usuario encargado = usuarioRepository.findById(dto.idEncargado())
-            .orElseThrow(() -> new ResourceNotFoundException("No se puede crear la bodega. El encargado con ID " + dto.idEncargado() + " no existe."));
+            .orElseThrow(() -> new EntityNotFoundException("No se puede crear la bodega. El encargado con ID " + dto.idEncargado() + " no existe."));
 
     Bodega bodega = bodegaMapper.dtoToEntity(dto, encargado);
     bodega.setActivo(true);
@@ -88,12 +95,13 @@ public BodegaResponseDTO crear(BodegaRequestDTO dto) {
 }
 
 @Override
+@Transactional
 public BodegaResponseDTO actualizar(Integer id, BodegaRequestDTO dto) {
     Bodega bodega = bodegaRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("No se puede actualizar. Bodega no encontrada con ID: " + id));
+            .orElseThrow(() -> new EntityNotFoundException("No se puede actualizar. Bodega no encontrada con ID: " + id));
 
     Usuario encargado = usuarioRepository.findById(dto.idEncargado())
-            .orElseThrow(() -> new ResourceNotFoundException("No se puede actualizar la bodega. El encargado con ID " + dto.idEncargado() + " no existe."));
+            .orElseThrow(() -> new EntityNotFoundException("No se puede actualizar la bodega. El encargado con ID " + dto.idEncargado() + " no existe."));
 
     bodegaMapper.updateEntityFromDto(bodega, dto, encargado);
 
@@ -102,9 +110,10 @@ public BodegaResponseDTO actualizar(Integer id, BodegaRequestDTO dto) {
 }
 
 @Override
+@Transactional
 public void desactivar(Integer id) {
     Bodega bodega = bodegaRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Bodega no encontrada con ID: " + id));
+            .orElseThrow(() -> new EntityNotFoundException("Bodega no encontrada con ID: " + id));
     bodega.setActivo(false);
     bodegaRepository.save(bodega);
 }
