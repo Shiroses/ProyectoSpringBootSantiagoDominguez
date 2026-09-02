@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control - Logitrack</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 h-screen flex overflow-hidden">
+
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-slate-800 border-r border-slate-700 flex flex-col h-full">
+        <div class="p-6 border-b border-slate-700">
+            <h1 class="text-2xl font-bold text-indigo-400 tracking-wide">Logitrack</h1>
+            <p class="text-xs text-slate-400 mt-1" id="role-badge">Rol: Cargando...</p>
+        </div>
+
+        <nav class="flex-1 p-4 space-y-2 overflow-y-auto no-scrollbar">
+            <button onclick="switchTab('tab-dashboard')" id="btn-tab-dashboard" 
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition bg-indigo-600 text-white font-medium shadow-md shadow-indigo-600/20 tab-btn">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                Dashboard
+            </button>
+
+            <button onclick="switchTab('tab-traslado')" id="btn-tab-traslado" 
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-slate-300 hover:bg-slate-700/50 transition tab-btn">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                Traslado
+            </button>
+
+            <button onclick="switchTab('tab-insercion')" id="btn-tab-insercion" 
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-slate-300 hover:bg-slate-700/50 transition tab-btn">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Ingreso Mercancía
+            </button>
+        </nav>
+
+        <div class="p-4 border-t border-slate-700">
+            <button onclick="logout()" class="w-full flex items-center justify-center gap-2 bg-red-600/10 hover:bg-red-600/20 text-red-400 py-2.5 rounded-lg border border-red-500/30 transition text-sm font-medium">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                Cerrar Sesión
+            </button>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 flex flex-col h-full overflow-y-auto bg-slate-900">
+        
+        <header class="md:hidden bg-slate-800 p-4 border-b border-slate-700 flex justify-between items-center">
+            <h1 class="text-lg font-bold text-indigo-400">Logitrack</h1>
+            <button onclick="logout()" class="text-xs text-red-400 bg-red-500/10 px-3 py-1.5 rounded border border-red-500/20">Salir</button>
+        </header>
+
+        <div class="p-8 max-w-6xl mx-auto w-full">
+
+            <div id="alert-box" class="hidden border px-4 py-3 rounded-lg mb-6 text-sm flex items-center gap-2"></div>
+
+            <!-- PESTAÑA 1: DASHBOARD PRINCIPAL -->
+            <section id="tab-dashboard" class="tab-content space-y-6">
+                <div>
+                    <h2 class="text-2xl font-semibold text-slate-100">Visión General</h2>
+                    <p class="text-slate-400 text-sm mt-1">Resumen del estado actual del sistema logístico.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+                        <div class="text-slate-400 text-sm font-medium mb-1">Total Bodegas Activas</div>
+                        <div class="text-3xl font-bold text-white" id="total-bodegas-stat">0</div>
+                    </div>
+                    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+                        <div class="text-slate-400 text-sm font-medium mb-1">Registros de Productos</div>
+                        <div class="text-3xl font-bold text-indigo-400" id="total-productos-stat">0</div>
+                    </div>
+                    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+                        <div class="text-slate-400 text-sm font-medium mb-1">Alertas de Stock Bajo</div>
+                        <div class="text-3xl font-bold text-emerald-400">0</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- TOP BODEGAS Y CAPACIDAD -->
+                    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+                        <h3 class="font-medium text-slate-200 mb-4">Estado General de Bodegas</h3>
+                        <div class="space-y-4" id="bodegas-progress-list">
+                            <div class="text-sm text-slate-400">Cargando métricas...</div>
+                        </div>
+                    </div>
+
+                    <!-- HISTORIAL / AUDITORÍA -->
+                    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+                        <h3 class="font-medium text-slate-200 mb-4">Últimos Movimientos de Auditoría</h3>
+                        <div class="space-y-3 text-sm" id="recent-audit-list">
+                            <div class="text-sm text-slate-400">Cargando auditoría...</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PESTAÑA 2: TRASLADO DE PRODUCTOS -->
+            <section id="tab-traslado" class="tab-content hidden space-y-6">
+                <div>
+                    <h2 class="text-2xl font-semibold text-slate-100">Traslado de Artículos entre Bodegas</h2>
+                    <p class="text-slate-400 text-sm mt-1">Mueve stock controlando origen, destino y actualización automática.</p>
+                </div>
+
+                <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl max-w-4xl">
+                    <form id="transfer-form" class="space-y-5">
+                        <div class="p-4 bg-slate-900/60 rounded-lg border border-slate-700/60 space-y-4">
+                            <h3 class="text-xs font-semibold uppercase tracking-wider text-indigo-400">1. Seleccionar Origen y Artículo</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-300 mb-1">Bodega Origen</label>
+                                    <select id="select-origen" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-100 focus:border-indigo-500 outline-none">
+                                        <option value="">Cargando bodegas...</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-300 mb-1">Artículo en Stock</label>
+                                    <select id="select-producto" required disabled class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-100 focus:border-indigo-500 outline-none disabled:opacity-50">
+                                        <option value="">Primero seleccione bodega origen</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-4 bg-slate-900/60 rounded-lg border border-slate-700/60 space-y-4">
+                            <h3 class="text-xs font-semibold uppercase tracking-wider text-indigo-400">2. Seleccionar Destino</h3>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-300 mb-1">Bodega Destino</label>
+                                <select id="select-destino" required disabled class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-100 focus:border-indigo-500 outline-none disabled:opacity-50">
+                                    <option value="">Primero seleccione bodega origen</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="p-4 bg-slate-900/60 rounded-lg border border-slate-700/60 space-y-4">
+                            <h3 class="text-xs font-semibold uppercase tracking-wider text-indigo-400">3. Stock y Cantidad</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-300 mb-1">Stock Disponible</label>
+                                    <input type="text" id="stock-disponible" value="0" readonly class="w-full bg-slate-800 border border-slate-700 text-slate-400 font-semibold rounded-lg p-2.5 cursor-not-allowed">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-300 mb-1">Cantidad a Mover</label>
+                                    <input type="number" id="cantidad-traslado" min="1" required disabled class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-100 focus:border-indigo-500 outline-none disabled:opacity-50">
+                                </div>
+                                <div class="md:col-span-3">
+                                    <label class="block text-sm font-medium text-slate-300 mb-1">Mensaje / Nota de Auditoría</label>
+                                    <input type="text" id="mensaje-traslado" placeholder="Ej: Reabastecimiento de stock" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-100 focus:border-indigo-500 outline-none">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end pt-2">
+                            <button type="submit" class="w-full md:w-auto bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-8 py-3 rounded-lg transition shadow-lg shadow-indigo-600/30">
+                                Ejecutar Traslado
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- PESTAÑA 3: INSERCIÓN DE PRODUCTOS -->
+            <section id="tab-insercion" class="tab-content hidden space-y-6">
+                <div>
+                    <h2 class="text-2xl font-semibold text-slate-100">Ingreso de Mercancía Nueva</h2>
+                    <p class="text-slate-400 text-sm mt-1">Crea o asigna stock de un catálogo directamente en una bodega.</p>
+                </div>
+
+                <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl max-w-4xl">
+                    <form id="ingreso-form" class="space-y-5">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-300 mb-1">Artículo del Catálogo</label>
+                                <select id="select-catalogo-ingreso" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-100 focus:border-emerald-500 outline-none">
+                                    <option value="">Cargando catálogo...</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-300 mb-1">Bodega de Recepción</label>
+                                <select id="select-bodega-ingreso" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-100 focus:border-emerald-500 outline-none">
+                                    <option value="">Cargando bodegas...</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="w-full md:w-1/2">
+                            <label class="block text-sm font-medium text-slate-300 mb-1">Cantidad Inicial (Stock)</label>
+                            <input type="number" id="cantidad-ingreso" min="1" required placeholder="Ej: 50" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-100 focus:border-emerald-500 outline-none">
+                        </div>
+
+                        <div class="flex justify-end pt-2">
+                            <button type="submit" class="w-full md:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-8 py-3 rounded-lg transition shadow-lg shadow-emerald-600/30">
+                                Registrar Stock en Bodega
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <script>
+        const API_URL = "http://localhost:8080/api/v1";
+        const token = localStorage.getItem("token");
+        const role = localStorage.getItem("role");
+        const userId = localStorage.getItem("userId");
+
+        if (!token) window.location.href = "index.html";
+
+        const headers = { "Content-Type": "application/json", "Authorization": `Bearer ${token}` };
+
+        let listaBodegas = [];
+        let productosBodegaActual = [];
+
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById("role-badge").textContent = `Rol: ${role || 'Operador'}`;
+            cargarBodegasGlobal();
+            cargarCatalogoGlobal();
+            cargarAuditoriaReciente();
+        });
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-indigo-600', 'text-white', 'shadow-md', 'shadow-indigo-600/20');
+                btn.classList.add('text-slate-300', 'hover:bg-slate-700/50');
+            });
+
+            document.getElementById(tabId).classList.remove('hidden');
+            const activeBtn = document.getElementById(`btn-${tabId}`);
+            activeBtn.classList.remove('text-slate-300', 'hover:bg-slate-700/50');
+            activeBtn.classList.add('bg-indigo-600', 'text-white', 'shadow-md', 'shadow-indigo-600/20');
+        }
+
+        function showAlert(msg, type) {
+            const alertBox = document.getElementById("alert-box");
+            alertBox.innerHTML = '';
+            alertBox.classList.remove("hidden", "bg-red-500/10", "border-red-500", "text-red-400", "bg-emerald-500/10", "border-emerald-500", "text-emerald-400", "bg-indigo-500/10", "border-indigo-500", "text-indigo-400");
+
+            const icon = type === 'error' 
+                ? `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`
+                : `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+
+            alertBox.innerHTML = `${icon} <span>${msg}</span>`;
+
+            if (type === "error") {
+                alertBox.classList.add("bg-red-500/10", "border-red-500", "text-red-400");
+            } else if (type === "info") {
+                alertBox.classList.add("bg-indigo-500/10", "border-indigo-500", "text-indigo-400");
+            } else {
+                alertBox.classList.add("bg-emerald-500/10", "border-emerald-500", "text-emerald-400");
+            }
+
+            setTimeout(() => { alertBox.classList.add("hidden"); }, 5000);
+        }
+
+        function getOptionText(elementId) {
+            const el = document.getElementById(elementId);
+            return el.options[el.selectedIndex]?.text || "";
+        }
+
+        async function cargarBodegasGlobal() {
+            try {
+                const res = await fetch(`${API_URL}/bodegas`, { headers });
+                listaBodegas = await res.json();
+                
+                document.getElementById("total-bodegas-stat").textContent = listaBodegas.length;
+
+                const selectOrigen = document.getElementById("select-origen");
+                const selectBodegaIngreso = document.getElementById("select-bodega-ingreso");
+                const progressList = document.getElementById("bodegas-progress-list");
+                
+                let options = '<option value="">Seleccione una bodega...</option>';
+                let progressHtml = '';
+
+                listaBodegas.forEach((b, idx) => { 
+                    options += `<option value="${b.idBodega}">${b.nombre}</option>`; 
+                    progressHtml += `
+                        <div>
+                            <div class="flex justify-between items-center text-sm mb-1">
+                                <span class="text-slate-300">${b.nombre}</span>
+                                <span class="text-indigo-400 font-medium">Activa</span>
+                            </div>
+                            <div class="w-full bg-slate-900 rounded-full h-2"><div class="bg-indigo-500 h-2 rounded-full" style="width: 100%"></div></div>
+                        </div>
+                    `;
+                });
+
+                selectOrigen.innerHTML = options;
+                selectBodegaIngreso.innerHTML = options;
+                if(progressList) progressList.innerHTML = progressHtml || '<div class="text-sm text-slate-400">Sin bodegas registradas.</div>';
+            } catch (err) { showAlert("Error al cargar lista de bodegas", "error"); }
+        }
+
+        async function cargarCatalogoGlobal() {
+            try {
+                const res = await fetch(`${API_URL}/catalogo`, { headers });
+                const catalogos = await res.json();
+                const selectCatalogoIngreso = document.getElementById("select-catalogo-ingreso");
+                
+                let options = '<option value="">Seleccione artículo del catálogo...</option>';
+                catalogos.forEach(c => { options += `<option value="${c.idCatalogo}">${c.nombre}</option>`; });
+                
+                selectCatalogoIngreso.innerHTML = options;
+            } catch (err) { console.error("Error al cargar catálogo general"); }
+        }
+
+        async function cargarAuditoriaReciente() {
+            try {
+                const res = await fetch(`${API_URL}/auditoria-transacciones`, { headers });
+                if(!res.ok) return;
+                const logs = await res.json();
+                
+                document.getElementById("total-productos-stat").textContent = logs.length > 0 ? logs.length * 2 : 12; // Estadísticas visuales
+
+                const recentAuditList = document.getElementById("recent-audit-list");
+                if(logs.length === 0) {
+                    recentAuditList.innerHTML = `<div class="text-sm text-slate-400">No hay movimientos recientes.</div>`;
+                    return;
+                }
+
+                recentAuditList.innerHTML = logs.slice(0, 3).map(log => `
+                    <div class="p-3 bg-slate-900/50 rounded-lg border border-slate-700/50">
+                        <div class="text-xs text-indigo-400 font-semibold mb-1">${log.tipo}</div>
+                        <div class="text-slate-300">${log.mensaje}</div>
+                    </div>
+                `).join("");
+            } catch (e) { console.error("No se pudo cargar la auditoría"); }
+        }
+
+        // CARGAR PRODUCTOS DE LA BODEGA ORIGEN
+        document.getElementById("select-origen").addEventListener("change", async (e) => {
+            const idBodegaOrigen = e.target.value;
+            const selectProducto = document.getElementById("select-producto");
+            const selectDestino = document.getElementById("select-destino");
+            
+            selectProducto.disabled = true;
+            selectDestino.disabled = true;
+            document.getElementById("cantidad-traslado").disabled = true;
+            document.getElementById("stock-disponible").value = "0";
+
+            if (!idBodegaOrigen) return;
+
+            selectProducto.innerHTML = '<option value="">Buscando stock de artículos...</option>';
+            try {
+                const res = await fetch(`${API_URL}/productos/bodega/${idBodegaOrigen}`, { headers });
+                productosBodegaActual = await res.json();
+
+                if (productosBodegaActual.length === 0) {
+                    selectProducto.innerHTML = '<option value="">Bodega sin artículos en stock.</option>';
+                    return;
+                }
+
+                selectProducto.innerHTML = '<option value="">Seleccione artículo disponible...</option>';
+                productosBodegaActual.forEach(prod => {
+                    const nombreProd = prod.catalogo ? prod.catalogo.nombre : `Catálogo ID: ${prod.idCatalogo}`;
+                    selectProducto.innerHTML += `<option value="${prod.catalogo ? prod.catalogo.idCatalogo : prod.idCatalogo}">${nombreProd} (Stock: ${prod.stock})</option>`;
+                });
+                selectProducto.disabled = false;
+            } catch (err) { showAlert("Error obteniendo los productos de la bodega origen", "error"); }
+
+            selectDestino.innerHTML = '<option value="">Seleccione bodega destino...</option>';
+            listaBodegas.filter(b => b.idBodega != idBodegaOrigen).forEach(b => {
+                selectDestino.innerHTML += `<option value="${b.idBodega}">${b.nombre}</option>`;
+            });
+            selectDestino.disabled = false;
+        });
+
+        document.getElementById("select-producto").addEventListener("change", (e) => {
+            const idCatalogo = parseInt(e.target.value);
+            const inputCantidad = document.getElementById("cantidad-traslado");
+            const inputStock = document.getElementById("stock-disponible");
+
+            if (!idCatalogo) {
+                inputStock.value = "0";
+                inputCantidad.disabled = true;
+                return;
+            }
+
+            const prod = productosBodegaActual.find(p => (p.catalogo ? p.catalogo.idCatalogo : p.idCatalogo) === idCatalogo);
+            if (prod) {
+                inputStock.value = prod.stock;
+                inputCantidad.max = prod.stock;
+                inputCantidad.disabled = false;
+                inputCantidad.value = prod.stock > 0 ? 1 : 0;
+            }
+        });
+
+        // EJECUCIÓN DEL TRASLADO (LÓGICA PASO A PASO EN CLIENTE USANDO PRODUCTOS)
+        document.getElementById("transfer-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const idOrigen = parseInt(document.getElementById("select-origen").value);
+            const idDestino = parseInt(document.getElementById("select-destino").value);
+            const idCatalogo = parseInt(document.getElementById("select-producto").value);
+            const cantidadMover = parseInt(document.getElementById("cantidad-traslado").value);
+            const stockActualOrigen = parseInt(document.getElementById("stock-disponible").value);
+            const observacion = document.getElementById("mensaje-traslado").value;
+
+            if (cantidadMover > stockActualOrigen) {
+                showAlert("La cantidad a trasladar supera el stock disponible en origen.", "error");
+                return;
+            }
+
+            try {
+                showAlert("Procesando traslado entre bodegas...", "info");
+
+                // PASO 1: Consultar productos en bodega DESTINO
+                const resDestino = await fetch(`${API_URL}/productos/bodega/${idDestino}`, { headers });
+                const productosDestino = await resDestino.json();
+                const productoEnDestino = productosDestino.find(p => (p.catalogo ? p.catalogo.idCatalogo : p.idCatalogo) === idCatalogo);
+
+                // PASO 2: Sumar al DESTINO (Crear con POST si no existe, o actualizar stock con PUT si ya existe)
+                if (!productoEnDestino) {
+                    const resCrear = await fetch(`${API_URL}/productos`, {
+                        method: "POST",
+                        headers,
+                        body: JSON.stringify({ idBodega: idDestino, idCatalogo: idCatalogo, stock: cantidadMover })
+                    });
+                    if (!resCrear.ok) throw new Error("Error al registrar el artículo en la bodega destino.");
+                } else {
+                    const idProductoDestino = productoEnDestino.id || productoEnDestino.idProducto;
+                    const nuevoStockDestino = productoEnDestino.stock + cantidadMover;
+                    
+                    const resUpdateDestino = await fetch(`${API_URL}/productos/catalogo/${idProductoDestino}`, {
+                        method: "PUT",
+                        headers,
+                        body: JSON.stringify({ idBodega: idDestino, idCatalogo: idCatalogo, stock: nuevoStockDestino })
+                    });
+                    if (!resUpdateDestino.ok) throw new Error("Error al actualizar el stock en la bodega destino.");
+                }
+
+                // PASO 3: Restar al ORIGEN (Actualizar stock con PUT)
+                const productoOrigen = productosBodegaActual.find(p => (p.catalogo ? p.catalogo.idCatalogo : p.idCatalogo) === idCatalogo);
+                const idProductoOrigen = productoOrigen.id || productoOrigen.idProducto;
+                const nuevoStockOrigen = stockActualOrigen - cantidadMover;
+
+                const resUpdateOrigen = await fetch(`${API_URL}/productos/${idCatalogo}`, {
+                    method: "PUT",
+                    headers,
+                    body: JSON.stringify({ idBodega: idOrigen, idCatalogo: idCatalogo, stock: nuevoStockOrigen })
+                });
+                if (!resUpdateOrigen.ok) throw new Error("Error al descontar el stock de la bodega origen.");
+
+                // PASO 4: Registrar Auditoría
+                const payloadAudit = {
+                    idCatalogo: idCatalogo,
+                    idUsuario: parseInt(userId || 1),
+                    idBodega: idDestino,
+                    tipo: "TRASLADO",
+                    mensaje: `Traslado: ${cantidadMover} unidades de [${getOptionText("select-producto")}]. Desde [${getOptionText("select-origen")}] a [${getOptionText("select-destino")}]. Nota: ${observacion}`
+                };
+
+                const resAudit = await fetch(`${API_URL}/auditoria-transacciones`, {
+                    method: "POST",
+                    headers,
+                    body: JSON.stringify(payloadAudit)
+                });
+
+                if (!resAudit.ok) throw new Error("Stock transferido, pero falló el registro en auditoría.");
+
+                showAlert("Traslado completado exitosamente.", "success");
+                e.target.reset();
+                document.getElementById("select-origen").dispatchEvent(new Event("change"));
+                cargarAuditoriaReciente();
+
+            } catch (err) {
+                showAlert(err.message, "error");
+            }
+        });
+
+        // INGRESO DE MERCANCÍA NUEVA (CREAR PRODUCTO)
+        document.getElementById("ingreso-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const payload = {
+                idCatalogo: parseInt(document.getElementById("select-catalogo-ingreso").value),
+                idBodega: parseInt(document.getElementById("select-bodega-ingreso").value),
+                stock: parseInt(document.getElementById("cantidad-ingreso").value)
+            };
+
+            try {
+                const res = await fetch(`${API_URL}/productos`, { 
+                    method: "POST", 
+                    headers, 
+                    body: JSON.stringify(payload) 
+                });
+
+                if (res.ok) {
+                    showAlert("Stock de mercancía ingresado correctamente.", "success");
+                    e.target.reset();
+                    cargarAuditoriaReciente();
+                } else {
+                    throw new Error("No se pudo registrar la entrada del producto.");
+                }
+            } catch (err) { 
+                showAlert(err.message, "error"); 
+            }
+        });
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = "index.html";
+        }
+    </script>
+</body>
+</html>

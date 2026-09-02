@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Logitrack</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 flex items-center justify-center min-h-screen text-slate-100">
+
+    <div class="w-full max-w-md bg-slate-800 p-8 rounded-xl shadow-2xl border border-slate-700">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-indigo-400">Logitrack</h1>
+            <p class="text-slate-400 text-sm mt-1">Ingresa a tu cuenta para continuar</p>
+        </div>
+
+        <div id="error-msg" class="hidden bg-red-500/10 border border-red-500 text-red-400 px-4 py-3 rounded-lg mb-6 text-sm"></div>
+
+        <form id="login-form" class="space-y-5">
+            <div>
+                <label class="block text-sm font-medium mb-1 text-slate-300">Usuario / Email</label>
+                <input type="text" id="username" required
+                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-indigo-500 transition">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-1 text-slate-300">Contraseña</label>
+                <input type="password" id="password" required
+                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-indigo-500 transition">
+            </div>
+
+            <button type="submit"
+                class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-lg transition shadow-lg shadow-indigo-600/30">
+                Iniciar Sesión
+            </button>
+        </form>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:8080";
+
+        document.getElementById("login-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+            const errorMsg = document.getElementById("error-msg");
+
+            errorMsg.classList.add("hidden");
+
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (!response.ok) throw new Error("Credenciales inválidas");
+
+                const data = await response.json();
+                
+                // Guardamos token y datos de sesión
+                localStorage.setItem("token", data.token);
+                localStorage.setItem("role", data.role); // Espera "ADMIN" o "EMPLEADO"
+                localStorage.setItem("userId", data.idUsuario);
+
+                // Redirección según rol
+                if (data.role === "ADMIN") {
+                    window.location.href = "dashboard.html?view=admin";
+                } else {
+                    window.location.href = "dashboard.html?view=empleado";
+                }
+
+            } catch (err) {
+                errorMsg.textContent = err.message;
+                errorMsg.classList.remove("hidden");
+            }
+        });
+    </script>
+</body>
+</html>
